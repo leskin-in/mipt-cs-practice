@@ -1,0 +1,6 @@
+*.o
+receiver
+sender
+compile_commands.json
+build
+.vscode
