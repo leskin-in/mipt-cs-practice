@@ -43,29 +43,27 @@ def main():
 
     # Receive data
     os.mkdir(path)
-    print("Running subprocess", "./receiver", args.address.split(":", 1)[0], str(server_response['port']), str(args.threads), path)
-    subprocess.run(
-        [
-            "./receiver", 
-            args.address.split(":", 1)[0], 
-            str(server_response['port']), 
-            str(args.threads), 
+    try:
+        subprocess_args = [
+            './receiver',
+            args.address.split(':', 1)[0],
+            str(server_response['port']),
+            str(args.threads),
             path
-        ],
-        check=True
-    )
+        ]
+        subprocess.run(subprocess_args, check=True)
 
-    # Restore the file
-    with open(args.ofile, 'wb') as ofile:
-        subprocess.run(
-            'cat {}'.format(path + '/*'),
-            shell=True,
-            stdout=ofile,
-            check=True
-        )
-
-    # Drop parts
-    shutil.rmtree(path, ignore_errors=True)
+        # Restore the file from parts
+        with open(args.ofile, 'wb') as ofile:
+            subprocess.run(
+                'cat {}'.format(path + '/*'),
+                shell=True,
+                stdout=ofile,
+                check=True
+            )
+    finally:
+        # Drop parts
+        shutil.rmtree(path, ignore_errors=True)
 
     # Check hash
     hashobj = hashlib.md5()

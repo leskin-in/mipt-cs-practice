@@ -19,12 +19,10 @@ HASH_BUFFER_SIZE = 4096
 
 def handle_file(path: str, n_threads: int) -> int:
     """
-    Prepare a process to send the given 'file' using the given 'n_threads' 
+    Prepare a process to send the given 'file' using the given 'n_threads'
     threads.
-    
-    Returns the port used.
 
-    Raises exceptions.
+    Returns the port used.
     """
 
     # Determine port
@@ -33,25 +31,21 @@ def handle_file(path: str, n_threads: int) -> int:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind(('', 0))
         port = s.getsockname()[1]
-    
-    # Determine size of one part
+
+    # Determine the size of one part
     file_size = os.path.getsize(path)
     part_size = (file_size // n_threads) + 1
 
     # Run sender
-    print("Running subprocess", './sender', str(port), path, str(part_size), str(n_threads))
-    process = subprocess.Popen(
-        [
-            './sender',
-            str(port),
-            path,
-            str(part_size),
-            str(n_threads)
-        ],
-        close_fds=True
-    )
-    
-    time.sleep(1)
+    subprocess_args = [
+        './sender',
+        str(port),
+        path,
+        str(part_size),
+        str(n_threads)
+    ]
+    print(*subprocess_args, file=sys.stderr)
+    process = subprocess.Popen(subprocess_args, close_fds=True)
 
     return port
 
@@ -64,7 +58,7 @@ class FileServerRequestHandler(http.server.BaseHTTPRequestHandler):
             data_raw_length = int(self.headers['Content-Length'])
             data_raw = self.rfile.read(data_raw_length)
             args = json.loads(data_raw)
-            
+
             # Check file exists
             if not os.path.exists(target_file) or not os.path.isfile(target_file):
                 self.send_error(http.server.HTTPStatus.NOT_FOUND)
@@ -85,7 +79,7 @@ class FileServerRequestHandler(http.server.BaseHTTPRequestHandler):
                 traceback.print_exc()
                 return
             calculated_hash = hashobj.hexdigest()
-            
+
             port = None
             try:
                 port = handle_file(target_file, args['threads'])
@@ -101,6 +95,9 @@ class FileServerRequestHandler(http.server.BaseHTTPRequestHandler):
                 'hash': calculated_hash,
                 'port': port
             }).encode('utf-8'))
+
+            # Sleep a bit in order to ensure subprocess has started
+            time.sleep(0.5)
 
         except:
             self.send_error(http.server.HTTPStatus.INTERNAL_SERVER_ERROR)

@@ -1,12 +1,23 @@
-all: sender receiver
+all: release
+
+CCFLAGS=-Wall -Wextra
+
+
+debug: CCFLAGS+=-Og -ggdb -Wpedantic
+debug: clean sender receiver
+
+release: CCFLAGS += -O3
+release: sender receiver
+
 
 sender: sender.c
-	cc -c sender.c -ggdb -pthread
-	cc -o sender -ggdb -pthread sender.o
+	$(CC) ${CCFLAGS} -c sender.c -pthread
+	$(CC) ${CCFLAGS} -o sender -pthread sender.o
 
 receiver: receiver.c
-	cc -c receiver.c -ggdb -pthread
-	cc -o receiver -ggdb -pthread receiver.o
+	$(CC) ${CCFLAGS} -c receiver.c -pthread
+	$(CC) ${CCFLAGS} -o receiver -pthread receiver.o
+
 
 clean:
 	rm -f sender receiver
